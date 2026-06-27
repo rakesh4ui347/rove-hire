@@ -75,11 +75,9 @@ export default async function InterviewsPage() {
           title="No interviews scheduled"
           description="Schedule an interview from a candidate profile."
           action={
-            <Button >
-              <Link href="/dashboard">
-                View Candidates
-              </Link>
-            </Button>
+            <Link href="/dashboard">
+              <Button>View Candidates</Button>
+            </Link>
           }
         />
       ) : (

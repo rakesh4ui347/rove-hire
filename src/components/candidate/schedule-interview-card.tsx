@@ -1,5 +1,8 @@
 "use client";
 
+import { FormEvent } from "react";
+import { Loader2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -10,7 +13,7 @@ import { ActionPanel } from "./action-panel";
 interface ScheduleInterviewCardProps {
   hidden?: boolean;
   loading: string;
-  onSubmit: (formData: FormData) => Promise<void>;
+  onSubmit: (formData: FormData) => Promise<boolean>;
 }
 
 const INTERVIEW_TYPES = [
@@ -41,9 +44,17 @@ export function ScheduleInterviewCard({
       description="Schedule the next interview with the candidate."
     >
       <form
-        action={onSubmit}
+        onSubmit={async (event: FormEvent<HTMLFormElement>) => {
+          event.preventDefault();
+          const form = event.currentTarget;
+          const success = await onSubmit(new FormData(form));
+          if (success) {
+            form.reset();
+          }
+        }}
         className="space-y-4"
       >
+        <fieldset disabled={isSubmitting} className="space-y-4">
         <Input
           name="date"
           type="date"
@@ -88,10 +99,12 @@ export function ScheduleInterviewCard({
           className="w-full"
           disabled={isSubmitting}
         >
-          {isSubmitting
-            ? "Scheduling..."
-            : "Schedule Interview"}
+          {isSubmitting && (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          )}
+          {isSubmitting ? "Scheduling..." : "Schedule Interview"}
         </Button>
+        </fieldset>
       </form>
     </ActionPanel>
   );

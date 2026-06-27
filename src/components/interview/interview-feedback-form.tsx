@@ -1,3 +1,6 @@
+import { FormEvent } from "react";
+import { Loader2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +11,7 @@ interface InterviewFeedbackFormProps {
   onSubmit: (
     interviewId: string,
     formData: FormData
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 }
 
 const OPTIONS = [
@@ -41,9 +44,17 @@ export function InterviewFeedbackForm({
 
   return (
     <form
-      action={(formData) =>
-        onSubmit(interviewId, formData)
-      }
+      onSubmit={async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const success = await onSubmit(
+          interviewId,
+          new FormData(form)
+        );
+        if (success) {
+          form.reset();
+        }
+      }}
       className="mt-4 space-y-3 border-t border-border pt-4"
     >
       <Select
@@ -72,9 +83,10 @@ export function InterviewFeedbackForm({
         size="sm"
         disabled={isSubmitting}
       >
-        {isSubmitting
-          ? "Saving..."
-          : "Mark Completed"}
+        {isSubmitting && (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        )}
+        {isSubmitting ? "Saving..." : "Mark Completed"}
       </Button>
     </form>
   );

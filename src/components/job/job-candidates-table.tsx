@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CandidateStatus } from "@prisma/client";
 
 import { Card } from "@/components/ui/card";
@@ -22,11 +22,9 @@ interface JobCandidatesTableProps {
 export function JobCandidatesTable({
   candidates,
 }: JobCandidatesTableProps) {
-  const router = useRouter();
-
   return (
     <Card className="overflow-hidden">
-      <table className="w-full text-left text-sm">
+      <table className="w-full table-fixed text-left text-sm">
         <thead className="border-b border-border bg-gray-50/80 text-xs uppercase tracking-wide text-gray-600">
           <tr>
             <th className="px-6 py-3 font-medium">Candidate</th>
@@ -38,20 +36,23 @@ export function JobCandidatesTable({
 
         <tbody>
           {candidates.map((candidate) => (
-            <tr
-              key={candidate.id}
-              onClick={() => router.push(`/candidates/${candidate.id}`)}
-              className="cursor-pointer border-b border-border transition-colors duration-150 last:border-0 hover:bg-gray-50"
-            >
-              <td className="px-6 py-4 font-semibold text-gray-900">
-                {candidate.name}
-              </td>
-              <td className="px-6 py-4 text-muted">{candidate.email}</td>
-              <td className="px-6 py-4">
-                <StatusBadge status={candidate.status} />
-              </td>
-              <td className="px-6 py-4 text-muted">
-                {formatDate(candidate.updatedAt)}
+            <tr key={candidate.id} className="border-b border-border last:border-0">
+              <td colSpan={4} className="p-0">
+                <Link
+                  href={`/candidates/${candidate.id}`}
+                  className="grid grid-cols-4 items-center px-6 py-4 text-sm transition-colors hover:bg-gray-50"
+                >
+                  <span className="font-semibold text-gray-900">
+                    {candidate.name}
+                  </span>
+                  <span className="truncate text-muted">{candidate.email}</span>
+                  <span>
+                    <StatusBadge status={candidate.status} />
+                  </span>
+                  <span className="text-muted">
+                    {formatDate(candidate.updatedAt)}
+                  </span>
+                </Link>
               </td>
             </tr>
           ))}

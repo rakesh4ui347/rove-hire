@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Loader2 } from "lucide-react";
 
 import { createCandidate } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
+import { toast } from "sonner";
 
 type JobOption = {
   id: string;
@@ -26,37 +27,40 @@ export function AddCandidateForm({
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [magicLink, setMagicLink] = useState("");
   const [copied, setCopied] = useState(false);
 
   const openJobs = jobs.filter((job) => job.status === "OPEN");
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
     try {
       setLoading(true);
-      setError("");
 
+      const formData = new FormData(event.currentTarget);
       const resume = formData.get("resume") as File | null;
 
       if (resume && resume.size > 10 * 1024 * 1024) {
-        setError("Resume must be smaller than 10 MB.");
+        toast.error("Resume must be smaller than 10 MB.");
         return;
       }
 
       const result = await createCandidate(formData);
 
       if (result.error) {
-        setError(result.error);
+        toast.error(result.error);
         return;
       }
 
       if (result.magicLink) {
         setMagicLink(result.magicLink);
       }
+
+      toast.success("Resume uploaded and candidate added successfully.");
     } catch (err) {
       console.error(err);
-      setError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -66,12 +70,13 @@ export function AddCandidateForm({
     try {
       await navigator.clipboard.writeText(magicLink);
       setCopied(true);
+      toast.success("Application link copied to clipboard.");
 
       setTimeout(() => {
         setCopied(false);
       }, 2000);
     } catch {
-      setError("Unable to copy the application link.");
+      toast.error("Unable to copy the application link.");
     }
   }
 
@@ -129,7 +134,7 @@ export function AddCandidateForm({
       />
 
       <CardBody>
-        <form action={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <FormField label="Full name" htmlFor="name">
             <Input
               id="name"
@@ -191,17 +196,12 @@ export function AddCandidateForm({
             />
           </FormField>
 
-          {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          )}
-
           <div className="flex gap-3 pt-2">
             <Button
               type="submit"
               disabled={loading || openJobs.length === 0}
             >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {loading ? "Adding..." : "Add candidate"}
             </Button>
 

@@ -3,11 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
-import { saveFile, getRelativePath } from "@/lib/storage";
 import { generateOfferLetterPdf, generateNDAPdf } from "@/lib/pdf";
 import { MAGIC_LINK_EXPIRY_DAYS } from "@/lib/constants";
 import { randomUUID } from "crypto";
 import { getAuthUrl } from "@/lib/auth-env";
+import {
+  removeDocumentFiles,
+  uploadFile,
+} from "@/lib/supabase-storage";
 import {
   CandidateStatus,
   FeedbackRecommendation,
@@ -15,7 +18,6 @@ import {
   JobStatus,
   TimelineEventType,
 } from "@prisma/client";
-import { supabase } from "./supabase";
 
 
 async function addTimelineEvent(
@@ -95,17 +97,7 @@ export async function createCandidate(formData: FormData) {
 
   const buffer = Buffer.from(await resume.arrayBuffer());
   const filename = `${randomUUID()}-${resume.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-  const { error } = await supabase.storage
-  .from("documents")
-  .upload(`resumes/${filename}`, buffer, {
-    contentType: "application/pdf",
-    upsert: true,
-  });
-
-if (error) {
-  throw error;
-}
-  
+  const storagePath = await uploadFile("resumes", filename, buffer);
 
   const candidate = await prisma.candidate.create({
     data: {
@@ -121,7 +113,7 @@ if (error) {
       candidateId: candidate.id,
       type: "RESUME",
       filename: resume.name,
-      path: `resumes/${filename}`,
+      path: storagePath,
       fileSize: buffer.length,
       mimeType: "application/pdf",
     },
@@ -360,8 +352,32 @@ export async function generateOfferDocuments(candidateId: string, formData: Form
   const offerFilename = `offer-letter-${candidate.name.replace(/\s+/g, "-").toLowerCase()}.pdf`;
   const ndaFilename = `nda-${candidate.name.replace(/\s+/g, "-").toLowerCase()}.pdf`;
 
-  const offerPath = await saveFile(`${randomUUID()}-${offerFilename}`, Buffer.from(offerBytes), "offers");
-  const ndaPath = await saveFile(`${randomUUID()}-${ndaFilename}`, Buffer.from(ndaBytes), "offers");
+  const existingDocs = await prisma.document.findMany({
+    where: { candidateId, type: { in: ["OFFER_LETTER", "NDA"] } },
+    select: { path: true, type: true },
+  });
+
+  let offerPath: string;
+  let ndaPath: string;
+
+  try {
+    offerPath = await uploadFile(
+      "offers",
+      `${randomUUID()}-${offerFilename}`,
+      Buffer.from(offerBytes)
+    );
+    ndaPath = await uploadFile(
+      "nda",
+      `${randomUUID()}-${ndaFilename}`,
+      Buffer.from(ndaBytes)
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to upload offer documents to storage.";
+    return { error: message };
+  }
 
   await prisma.$transaction([
     prisma.offerDetails.upsert({
@@ -392,7 +408,7 @@ export async function generateOfferDocuments(candidateId: string, formData: Form
         candidateId,
         type: "OFFER_LETTER",
         filename: offerFilename,
-        path: getRelativePath(offerPath),
+        path: offerPath,
         fileSize: offerBytes.length,
         mimeType: "application/pdf",
       },
@@ -402,7 +418,7 @@ export async function generateOfferDocuments(candidateId: string, formData: Form
         candidateId,
         type: "NDA",
         filename: ndaFilename,
-        path: getRelativePath(ndaPath),
+        path: ndaPath,
         fileSize: ndaBytes.length,
         mimeType: "application/pdf",
       },
@@ -420,6 +436,10 @@ export async function generateOfferDocuments(candidateId: string, formData: Form
       },
     }),
   ]);
+
+  if (existingDocs.length > 0) {
+    await removeDocumentFiles(existingDocs);
+  }
 
   revalidatePath(`/candidates/${candidateId}`);
   revalidatePath("/dashboard");

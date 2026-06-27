@@ -8,7 +8,7 @@ import {
   generateSampleResumePdf,
 } from "../src/lib/pdf";
 import { HR_TEST_CREDENTIALS } from "../src/lib/constants";
-import { getRelativePath, saveFile } from "../src/lib/storage";
+import { uploadFile, getStorageBucket } from "../src/lib/supabase-storage";
 
 const prisma = new PrismaClient();
 
@@ -22,16 +22,20 @@ async function seedDocument(
   candidateId: string,
   type: "RESUME" | "OFFER_LETTER" | "NDA",
   filename: string,
-  data: Buffer,
-  subdir: string
+  data: Buffer
 ) {
-  const filePath = await saveFile(filename, data, subdir);
+  const storagePath = await uploadFile(
+    getStorageBucket(type),
+    `${randomUUID()}-${filename}`,
+    data
+  );
+
   await prisma.document.create({
     data: {
       candidateId,
       type,
       filename,
-      path: getRelativePath(filePath),
+      path: storagePath,
       fileSize: data.length,
       mimeType: "application/pdf",
     },
@@ -100,7 +104,7 @@ async function main() {
       jobOpeningId: engJob.id,
     },
   });
-  await seedDocument(maya.id, "RESUME", "maya-torres-resume.pdf", mayaResume, "resumes");
+  await seedDocument(maya.id, "RESUME", "maya-torres-resume.pdf", mayaResume);
   const mayaToken = randomUUID();
   await prisma.magicLink.create({
     data: { token: mayaToken, candidateId: maya.id, expiresAt: addDays(new Date(), 14) },
@@ -130,7 +134,7 @@ async function main() {
       linkedInUrl: "https://linkedin.com/in/jamesokonkwo",
     },
   });
-  await seedDocument(james.id, "RESUME", "james-okonkwo-resume.pdf", jamesResume, "resumes");
+  await seedDocument(james.id, "RESUME", "james-okonkwo-resume.pdf", jamesResume);
   await prisma.timelineEvent.createMany({
     data: [
       {
@@ -164,7 +168,7 @@ async function main() {
       linkedInUrl: "https://linkedin.com/in/priyasharma",
     },
   });
-  await seedDocument(priya.id, "RESUME", "priya-sharma-resume.pdf", priyaResume, "resumes");
+  await seedDocument(priya.id, "RESUME", "priya-sharma-resume.pdf", priyaResume);
   await prisma.interview.create({
     data: {
       candidateId: priya.id,
@@ -233,7 +237,7 @@ async function main() {
       linkedInUrl: "https://linkedin.com/in/danielkim",
     },
   });
-  await seedDocument(daniel.id, "RESUME", "daniel-kim-resume.pdf", danielResume, "resumes");
+  await seedDocument(daniel.id, "RESUME", "daniel-kim-resume.pdf", danielResume);
 
   const offerStart = addDays(new Date(), 30);
   const offerBytes = Buffer.from(
@@ -260,8 +264,8 @@ async function main() {
       location: "Austin, TX (Hybrid)",
     },
   });
-  await seedDocument(daniel.id, "OFFER_LETTER", "offer-letter-daniel-kim.pdf", offerBytes, "offers");
-  await seedDocument(daniel.id, "NDA", "nda-daniel-kim.pdf", ndaBytes, "offers");
+  await seedDocument(daniel.id, "OFFER_LETTER", "offer-letter-daniel-kim.pdf", offerBytes);
+  await seedDocument(daniel.id, "NDA", "nda-daniel-kim.pdf", ndaBytes);
   await prisma.timelineEvent.createMany({
     data: [
       {
@@ -307,7 +311,7 @@ async function main() {
       rejectionReason: "Insufficient experience with distributed systems at scale.",
     },
   });
-  await seedDocument(elena.id, "RESUME", "elena-vasquez-resume.pdf", elenaResume, "resumes");
+  await seedDocument(elena.id, "RESUME", "elena-vasquez-resume.pdf", elenaResume);
   await prisma.timelineEvent.createMany({
     data: [
       {

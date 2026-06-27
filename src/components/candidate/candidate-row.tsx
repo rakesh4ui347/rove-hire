@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CandidateStatus } from "@prisma/client";
 
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -18,30 +18,26 @@ type CandidateRowProps = {
   };
 };
 
-export function CandidateRow({
-  candidate,
-}: CandidateRowProps) {
-  const router = useRouter();
-
+export function CandidateRow({ candidate }: CandidateRowProps) {
   return (
-    <tr
-      onClick={() => router.push(`/candidates/${candidate.id}`)}
-      className="cursor-pointer border-b border-border transition-colors duration-150 last:border-0 hover:bg-gray-50"
-    >
-      <td className="px-6 py-4 font-semibold text-gray-900">
-        {candidate.name}
-      </td>
+    <tr className="border-b border-border last:border-0">
+      <td colSpan={4} className="p-0">
+        <Link
+          href={`/candidates/${candidate.id}`}
+          className="grid grid-cols-4 items-center px-6 py-4 text-sm transition-colors hover:bg-gray-50"
+        >
+          <span className="font-semibold text-gray-900">
+            {candidate.name}
+          </span>
 
-      <td className="px-6 py-4 text-muted">
-        {candidate.jobOpening.title}
-      </td>
+          <span className="text-muted">{candidate.jobOpening.title}</span>
 
-      <td className="px-6 py-4">
-        <StatusBadge status={candidate.status} />
-      </td>
+          <span>
+            <StatusBadge status={candidate.status} />
+          </span>
 
-      <td className="px-6 py-4 text-muted">
-        {formatDate(candidate.updatedAt)}
+          <span className="text-muted">{formatDate(candidate.updatedAt)}</span>
+        </Link>
       </td>
     </tr>
   );

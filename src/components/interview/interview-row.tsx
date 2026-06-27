@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { CandidateStatus, InterviewStatus } from "@prisma/client";
 
@@ -25,68 +27,57 @@ type InterviewRowProps = {
   };
 };
 
-export function InterviewRow({
-  interview,
-}: InterviewRowProps) {
-  const initials =
-    interview.candidate.name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .slice(0, 2);
+export function InterviewRow({ interview }: InterviewRowProps) {
+  const initials = interview.candidate.name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2);
+
   return (
-    <tr className="border-b transition-colors hover:bg-muted/40">
-      <td className="px-6 py-4">
-        <div className="font-medium">
-          {formatDate(interview.scheduledAt)}
-        </div>
+    <tr className="border-b border-border last:border-0">
+      <td colSpan={6} className="p-0">
+        <Link
+          href={`/candidates/${interview.candidateId}`}
+          className="grid grid-cols-6 items-center px-6 py-4 text-sm transition-colors hover:bg-gray-50"
+        >
+          <span>
+            <span className="block font-medium text-gray-900">
+              {formatDate(interview.scheduledAt)}
+            </span>
+            <span className="block text-xs text-muted">
+              {formatTime(interview.scheduledAt)}
+            </span>
+          </span>
 
-        <div className="text-xs text-muted">
-          {formatTime(interview.scheduledAt)}
-        </div>
-      </td>
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+              {initials}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate font-semibold text-gray-900">
+                {interview.candidate.name}
+              </span>
+              <span className="block truncate text-xs text-muted">
+                {interview.candidate.jobOpening.title}
+              </span>
+            </span>
+          </span>
 
-      <td className="px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 font-semibold text-accent">
-            {initials}
-          </div>
+          <span>
+            <InterviewTypeBadge type={interview.type} />
+          </span>
 
-          <div>
-            <Link
-              href={`/candidates/${interview.candidateId}`}
-              className="font-semibold hover:text-accent"
-            >
-              {interview.candidate.name}
-            </Link>
+          <span className="text-muted">{interview.interviewerName}</span>
 
-            <p className="text-xs text-muted">
-              {interview.candidate.jobOpening.title}
-            </p>
-          </div>
-        </div>
-      </td>
+          <span>
+            <InterviewStatusBadge status={interview.status} />
+          </span>
 
-      <td className="px-6 py-4">
-      <InterviewTypeBadge
-          type={interview.type}
-        />
-      </td>
-
-      <td className="px-6 py-4">
-        {interview.interviewerName}
-      </td>
-
-      <td className="px-6 py-4">
-        <InterviewStatusBadge
-          status={interview.status}
-        />
-      </td>
-
-      <td className="px-6 py-4">
-        <StatusBadge
-          status={interview.candidate.status}
-        />
+          <span>
+            <StatusBadge status={interview.candidate.status} />
+          </span>
+        </Link>
       </td>
     </tr>
   );

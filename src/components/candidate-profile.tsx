@@ -1,6 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import {
   completeInterview,
@@ -60,41 +62,32 @@ export function CandidateProfile({
   candidate,
   initialMagicLink = "",
 }: CandidateProfileProps) {
+  const router = useRouter();
+
   const [loading, setLoading] = useState("");
-  const [error, setError] = useState("");
 
   const [magicLink, setMagicLink] = useState(initialMagicLink ?? "");
   const [copied, setCopied] = useState(false);
 
-  const [showOfferForm, setShowOfferForm] =
-    useState(false);
+  const [showOfferForm, setShowOfferForm] = useState(false);
+  const [showRejectForm, setShowRejectForm] = useState(false);
 
-  const [showRejectForm, setShowRejectForm] =
-    useState(false);
+  const resume = candidate.documents.find((doc) => doc.type === "RESUME");
 
-  const resume = candidate.documents.find(
-    (doc) => doc.type === "RESUME"
+  const generatedDocuments = candidate.documents.filter((doc) =>
+    ["OFFER_LETTER", "NDA"].includes(doc.type)
   );
 
-  const generatedDocuments =
-    candidate.documents.filter((doc) =>
-      ["OFFER_LETTER", "NDA"].includes(doc.type)
-    );
+  const offerLetter = candidate.documents.find(
+    (doc) => doc.type === "OFFER_LETTER"
+  );
 
-  const offerLetter =
-    candidate.documents.find(
-      (doc) => doc.type === "OFFER_LETTER"
-    );
-
-  const hasCompletedInterview =
-    candidate.interviews.some(
-      (interview) =>
-        interview.status === "COMPLETED"
-    );
+  const hasCompletedInterview = candidate.interviews.some(
+    (interview) => interview.status === "COMPLETED"
+  );
 
   const isTerminal =
-    candidate.status === "HIRED" ||
-    candidate.status === "REJECTED";
+    candidate.status === "HIRED" || candidate.status === "REJECTED";
 
   const canScheduleInterview =
     candidate.status === "APPLIED" ||
@@ -109,20 +102,31 @@ export function CandidateProfile({
 
   async function runAction(
     key: string,
-    action: () => Promise<ActionResult>
-  ) {
+    action: () => Promise<ActionResult>,
+    successMessage?: string,
+    onSuccess?: () => void
+  ): Promise<boolean> {
     setLoading(key);
-    setError("");
 
     try {
       const result = await action();
 
       if (result.error) {
-        setError(result.error);
+        toast.error(result.error);
+        return false;
       }
+
+      if (successMessage) {
+        toast.success(successMessage);
+      }
+
+      onSuccess?.();
+      router.refresh();
+      return true;
     } catch (err) {
       console.error(err);
-      setError("Something went wrong.");
+      toast.error("Something went wrong. Please try again.");
+      return false;
     } finally {
       setLoading("");
     }
@@ -134,135 +138,102 @@ export function CandidateProfile({
   ) =>
     runAction(
       `feedback-${interviewId}`,
-      () =>
-        completeInterview(
-          interviewId,
-          formData
-        )
+      () => completeInterview(interviewId, formData),
+      "Interview marked as completed."
     );
 
-  const handleScheduleInterview = (
-    formData: FormData
-  ) =>
+  const handleScheduleInterview = (formData: FormData) =>
     runAction(
       "schedule",
-      () =>
-        scheduleInterview(
-          candidate.id,
-          formData
-        )
+      () => scheduleInterview(candidate.id, formData),
+      "Interview scheduled successfully."
     );
 
-  const handleGenerateOffer = (
-    formData: FormData
-  ) =>
-    runAction(
+  const handleGenerateOffer = async (formData: FormData) => {
+    await runAction(
       "offer",
-      () =>
-        generateOfferDocuments(
-          candidate.id,
-          formData
-        )
+      () => generateOfferDocuments(candidate.id, formData),
+      "Offer letter and NDA generated successfully.",
+      () => setShowOfferForm(false)
     );
+  };
 
   const handleGenerateMagicLink = () =>
     runAction("magic", async () => {
-      const result =
-        await regenerateMagicLink(
-          candidate.id
-        );
+      const result = await regenerateMagicLink(candidate.id);
 
       if (result.magicLink) {
         setMagicLink(result.magicLink);
       }
 
       return result;
-    });
+    }, "New application link generated.");
 
   const handleHire = () =>
     runAction(
       "hire",
-      () =>
-        markCandidateHired(candidate.id)
+      () => markCandidateHired(candidate.id),
+      "Candidate marked as hired."
     );
 
-  const handleReject = (
-    formData: FormData
-  ) =>
+  const handleReject = (formData: FormData) =>
     runAction(
       "reject",
-      () =>
-        markCandidateRejected(
-          candidate.id,
-          formData
-        )
+      () => markCandidateRejected(candidate.id, formData),
+      "Candidate marked as rejected.",
+      () => setShowRejectForm(false)
     );
 
   const handleCopyMagicLink = async () => {
     if (!magicLink) return;
 
-    await navigator.clipboard.writeText(
-      magicLink
-    );
+    try {
+      await navigator.clipboard.writeText(magicLink);
+      setCopied(true);
+      toast.success("Application link copied to clipboard.");
 
-    setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {
+      toast.error("Unable to copy the application link.");
+    }
+  };
 
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  };  return (
+  return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
-        <CandidateInfoCard
-          candidate={candidate}
-          resume={resume}
-        />
+        <CandidateInfoCard candidate={candidate} resume={resume} />
 
-        <TimelineCard
-          events={candidate.timelineEvents}
-        />
+        <TimelineCard events={candidate.timelineEvents} />
 
         {!!candidate.interviews.length && (
           <InterviewCard
             interviews={candidate.interviews}
             loading={loading}
-            onCompleteInterview={
-              handleCompleteInterview
-            }
+            onCompleteInterview={handleCompleteInterview}
           />
         )}
 
         {!!generatedDocuments.length && (
-          <DocumentsCard
-            documents={generatedDocuments}
-          />
+          <DocumentsCard documents={generatedDocuments} />
         )}
       </div>
 
       <div className="space-y-6">
-        {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        )}
-
         <MagicLinkCard
           candidateStatus={candidate.status}
           loading={loading}
           magicLink={magicLink}
           copied={copied}
           onCopy={handleCopyMagicLink}
-          onGenerate={
-            handleGenerateMagicLink
-          }
+          onGenerate={handleGenerateMagicLink}
         />
 
         <ScheduleInterviewCard
           hidden={!canScheduleInterview}
           loading={loading}
-          onSubmit={
-            handleScheduleInterview
-          }
+          onSubmit={handleScheduleInterview}
         />
 
         <OfferForm
@@ -277,16 +248,10 @@ export function CandidateProfile({
 
         <CandidateActionsCard
           candidate={candidate}
-          offerGenerated={
-            Boolean(offerLetter)
-          }
-          showRejectForm={
-            showRejectForm
-          }
+          offerGenerated={Boolean(offerLetter)}
+          showRejectForm={showRejectForm}
           loading={loading}
-          onToggleReject={
-            setShowRejectForm
-          }
+          onToggleReject={setShowRejectForm}
           onHire={handleHire}
           onReject={handleReject}
         />

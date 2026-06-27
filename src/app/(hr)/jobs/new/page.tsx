@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
 import { createJobOpening } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
@@ -10,30 +11,32 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { toast } from "sonner";
 
 export default function NewJobPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
     try {
       setLoading(true);
-      setError("");
 
-      const result = await createJobOpening(formData);
+      const result = await createJobOpening(new FormData(event.currentTarget));
 
       if (result.error) {
-        setError(result.error);
+        toast.error(result.error);
         return;
       }
 
+      toast.success("Job opening created.");
       router.push("/jobs");
       router.refresh();
     } catch (error) {
       console.error(error);
-      setError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -61,7 +64,7 @@ export default function NewJobPage() {
         />
 
         <CardBody>
-          <form action={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
                 htmlFor="title"
@@ -136,14 +139,9 @@ export default function NewJobPage() {
               </Select>
             </div>
 
-            {error && (
-              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-                {error}
-              </p>
-            )}
-
             <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={loading}>
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {loading ? "Creating..." : "Create opening"}
               </Button>
 

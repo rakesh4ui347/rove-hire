@@ -80,7 +80,15 @@ Set these in **Vercel → Project → Settings → Environment Variables** for *
 | `NEXTAUTH_SECRET` | Yes | Random string — `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | Recommended | `https://rove-hire-gamma.vercel.app` — auto-detected from `VERCEL_URL` if omitted |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | For resume uploads |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | For resume uploads |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | **service_role** key (not anon) — Supabase → Settings → API |
+
+### Supabase storage setup
+
+1. In `.env`, set `SUPABASE_SERVICE_ROLE_KEY` to the **service_role** secret (not the `anon` key).
+2. Run [`supabase/storage.sql`](supabase/storage.sql) in the Supabase SQL editor to create `resumes`, `offers`, and `nda` buckets.
+3. Restart the dev server after changing `.env`.
+
+If offer generation fails with **"row-level security policy"**, the usual cause is the anon key being used instead of `service_role`.
 
 After adding env vars, **redeploy** (env changes do not apply to existing deployments until redeployed).
 

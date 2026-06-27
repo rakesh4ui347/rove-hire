@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Loader2 } from "lucide-react";
 import { CandidateStatus } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
@@ -54,9 +54,14 @@ export function MagicLinkCard({
           disabled={loading === "magic"}
           onClick={onGenerate}
         >
-          {magicLink
-            ? "Regenerate Link"
-            : "Generate Link"}
+          {loading === "magic" && (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          )}
+          {loading === "magic"
+            ? "Generating..."
+            : magicLink
+              ? "Regenerate Link"
+              : "Generate Link"}
         </Button>
 
         {magicLink && (

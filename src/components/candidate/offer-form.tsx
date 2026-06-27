@@ -1,5 +1,7 @@
 "use client";
 
+import { FormEvent } from "react";
+import { Loader2 } from "lucide-react";
 import { CandidateStatus } from "@prisma/client";
 
 import { ActionPanel } from "./action-panel";
@@ -64,9 +66,13 @@ export function OfferForm({
         </Button>
       ) : (
         <form
-          action={onSubmit}
+          onSubmit={async (event: FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            await onSubmit(new FormData(event.currentTarget));
+          }}
           className="space-y-4"
         >
+          <fieldset disabled={isSubmitting} className="space-y-4">
           <FormField
             label="Role Title"
             htmlFor="roleTitle"
@@ -157,6 +163,9 @@ export function OfferForm({
               type="submit"
               disabled={isSubmitting}
             >
+              {isSubmitting && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
               {isSubmitting
                 ? isRegenerate
                   ? "Regenerating..."
@@ -174,6 +183,7 @@ export function OfferForm({
               Cancel
             </Button>
           </div>
+          </fieldset>
         </form>
       )}
     </ActionPanel>

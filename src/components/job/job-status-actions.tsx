@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { JobStatus } from "@prisma/client";
 
 import { updateJobStatus } from "@/lib/actions";
@@ -15,44 +17,46 @@ interface JobStatusActionsProps {
 export function JobStatusActions({ jobId, status }: JobStatusActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const isOpen = status === "OPEN";
   const nextStatus: JobStatus = isOpen ? "CLOSED" : "OPEN";
 
   async function handleToggle() {
     setLoading(true);
-    setError("");
 
-    const result = await updateJobStatus(jobId, nextStatus);
+    try {
+      const result = await updateJobStatus(jobId, nextStatus);
 
-    if (result.error) {
-      setError(result.error);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(isOpen ? "Job closed successfully." : "Job reopened successfully.");
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.refresh();
-    setLoading(false);
   }
 
   return (
-    <div className="flex flex-col items-end gap-2">
-      <Button
-        variant={isOpen ? "secondary" : "primary"}
-        size="sm"
-        disabled={loading}
-        onClick={handleToggle}
-      >
-        {loading
-          ? isOpen
-            ? "Closing..."
-            : "Reopening..."
-          : isOpen
-            ? "Close Job"
-            : "Reopen Job"}
-      </Button>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-    </div>
+    <Button
+      variant={isOpen ? "secondary" : "primary"}
+      size="sm"
+      disabled={loading}
+      onClick={handleToggle}
+    >
+      {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+      {loading
+        ? isOpen
+          ? "Closing..."
+          : "Reopening..."
+        : isOpen
+          ? "Close Job"
+          : "Reopen Job"}
+    </Button>
   );
 }

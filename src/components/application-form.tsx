@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
+import { toast } from "sonner";
 import { submitApplication } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,30 +70,34 @@ export function ApplicationForm({
   candidateName: string;
   jobTitle: string;
 }) {
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
     try {
       setLoading(true);
-      setError("");
-  
-      const result = await submitApplication(token, formData);
-  
+
+      const result = await submitApplication(
+        token,
+        new FormData(event.currentTarget)
+      );
+
       if (
         result.error &&
         !["invalid", "expired", "used"].includes(result.error)
       ) {
-        setError(result.error);
+        toast.error(result.error);
         return;
       }
-  
+
       if (result.success) {
         setSubmitted(true);
+        toast.success("Application submitted successfully.");
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -124,7 +129,7 @@ export function ApplicationForm({
           description={`Hi ${candidateName}, please fill in your details for the ${jobTitle} role at ROVE.`}
         />
        <CardBody>
-  <form action={handleSubmit} className="space-y-4">
+  <form onSubmit={handleSubmit} className="space-y-4">
     {fields.map((field) => (
       <FormField
         key={field.id}
@@ -147,12 +152,6 @@ export function ApplicationForm({
         />
       </FormField>
     ))}
-
-    {error && (
-      <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-        {error}
-      </p>
-    )}
 
     <Button
       type="submit"

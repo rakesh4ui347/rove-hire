@@ -14,7 +14,7 @@ interface InterviewCardProps {
   onCompleteInterview: (
     interviewId: string,
     formData: FormData
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 }
 
 export function InterviewCard({

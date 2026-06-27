@@ -25,7 +25,7 @@ export function CandidateTable({
 }: CandidateTableProps) {
   return (
     <Card className="overflow-hidden">
-      <table className="w-full text-left text-sm">
+      <table className="w-full table-fixed text-left text-sm">
         <thead className="border-b border-border bg-gray-50/80 text-xs uppercase tracking-wide text-gray-600">
           <tr>
             <th className="px-6 py-3 font-medium">

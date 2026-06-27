@@ -1,5 +1,7 @@
 "use client";
 
+import { FormEvent } from "react";
+import { Loader2 } from "lucide-react";
 import { CandidateStatus } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
@@ -16,8 +18,8 @@ interface CandidateActionsCardProps {
   loading: string;
   showRejectForm: boolean;
   onToggleReject: (show: boolean) => void;
-  onHire: () => void;
-  onReject: (formData: FormData) => Promise<void>;
+  onHire: () => void | Promise<boolean>;
+  onReject: (formData: FormData) => Promise<boolean>;
 }
 
 export function CandidateActionsCard({
@@ -44,15 +46,13 @@ export function CandidateActionsCard({
     >
       <Button
         className="w-full"
-        disabled={
-          loading === "hire" ||
-          !offerGenerated
-        }
+        disabled={loading === "hire" || !offerGenerated}
         onClick={onHire}
       >
-        {loading === "hire"
-          ? "Hiring..."
-          : "Mark as Hired"}
+        {loading === "hire" && (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        )}
+        {loading === "hire" ? "Hiring..." : "Mark as Hired"}
       </Button>
 
       {!offerGenerated && (
@@ -74,7 +74,14 @@ export function CandidateActionsCard({
         </Button>
       ) : (
         <form
-          action={onReject}
+          onSubmit={async (event: FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const success = await onReject(new FormData(form));
+            if (success) {
+              form.reset();
+            }
+          }}
           className="space-y-3"
         >
           <Textarea
@@ -87,13 +94,12 @@ export function CandidateActionsCard({
             <Button
               type="submit"
               variant="danger"
-              disabled={
-                loading === "reject"
-              }
+              disabled={loading === "reject"}
             >
-              {loading === "reject"
-                ? "Rejecting..."
-                : "Confirm"}
+              {loading === "reject" && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              {loading === "reject" ? "Rejecting..." : "Confirm"}
             </Button>
 
             <Button
