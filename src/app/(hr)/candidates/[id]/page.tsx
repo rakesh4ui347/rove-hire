@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { CandidateProfile } from "@/components/candidate-profile";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PageBack } from "@/components/ui/page-back";
+import { getAuthUrl } from "@/lib/auth-env";
 
 interface CandidatePageProps {
   params: Promise<{
@@ -71,7 +72,7 @@ export default async function CandidatePage({
 
   const activeMagicLink =
     candidate.magicLinks[0]
-      ? `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/apply/${candidate.magicLinks[0].token}`
+      ? `${getAuthUrl()}/apply/${candidate.magicLinks[0].token}`
       : "";
 
   const { magicLinks, ...profileCandidate } = candidate;

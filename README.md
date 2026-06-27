@@ -68,6 +68,35 @@ At scale, I would move to HTML templates (React-PDF or Puppeteer) for richer lay
 - No automated tests yet
 - File uploads limited to PDF only (as specified)
 
-## Hosting
+## Hosting (Vercel)
 
-Deploy to **Vercel** or **Railway** with environment variables from `.env.example`. Run `npm run db:push && npm run db:seed` on first deploy.
+### Required environment variables
+
+Set these in **Vercel → Project → Settings → Environment Variables** for **Production** (and Preview if you test there):
+
+| Variable | Required | Notes |
+|----------|----------|-------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `NEXTAUTH_SECRET` | Yes | Random string — `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | Recommended | `https://rove-hire-gamma.vercel.app` — auto-detected from `VERCEL_URL` if omitted |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | For resume uploads |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | For resume uploads |
+
+After adding env vars, **redeploy** (env changes do not apply to existing deployments until redeployed).
+
+Seed the production database once:
+
+```bash
+DATABASE_URL="your-production-url" npx prisma db push
+DATABASE_URL="your-production-url" npx prisma db seed
+```
+
+### Login loop after deploy?
+
+Sign-in succeeds but you return to `/login` when:
+
+1. **`NEXTAUTH_SECRET` is missing on Vercel** — most common cause
+2. **`DATABASE_URL` is wrong** — user lookup fails (you'd see "Invalid email or password" instead)
+3. **Database not seeded** — no `hr@rove.com` user exists
+
+Test credentials: `hr@rove.com` / `RoveHire2024!`

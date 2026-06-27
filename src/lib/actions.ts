@@ -7,6 +7,7 @@ import { saveFile, getRelativePath } from "@/lib/storage";
 import { generateOfferLetterPdf, generateNDAPdf } from "@/lib/pdf";
 import { MAGIC_LINK_EXPIRY_DAYS } from "@/lib/constants";
 import { randomUUID } from "crypto";
+import { getAuthUrl } from "@/lib/auth-env";
 import {
   CandidateStatus,
   FeedbackRecommendation,
@@ -145,7 +146,7 @@ if (error) {
   revalidatePath("/dashboard");
   revalidatePath("/jobs");
 
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const baseUrl = getAuthUrl();
   return {
     success: true,
     candidateId: candidate.id,
@@ -492,6 +493,6 @@ export async function regenerateMagicLink(candidateId: string) {
     data: { token, candidateId, expiresAt },
   });
 
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const baseUrl = getAuthUrl();
   return { success: true, magicLink: `${baseUrl}/apply/${token}` };
 }

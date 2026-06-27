@@ -4,7 +4,6 @@ import Image from "next/image";
 import { FormEvent, useState } from "react";
 import { Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +13,6 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardBody } from "@/components/ui/card";
 
 export default function LoginPage() {
-  const router = useRouter();
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -42,8 +39,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    // Full navigation ensures the session cookie is sent on the next request.
+    window.location.href = "/dashboard";
   }
 
   return (

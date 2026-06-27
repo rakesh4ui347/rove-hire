@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import {
+  getAuthSecret,
+  resolveAuthEnv,
+  useSecureAuthCookies,
+} from "@/lib/auth-env";
+
+resolveAuthEnv();
 
 const PUBLIC_PATHS = new Set(["/login"]);
 
@@ -12,28 +19,31 @@ export const ROUTES = {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Public routes
-  if (
+  const token = await getToken({
+    req: request,
+    secret: getAuthSecret(),
+    secureCookie: useSecureAuthCookies(),
+  });
+
+  const isPublic =
     PUBLIC_PATHS.has(pathname) ||
     pathname.startsWith("/apply") ||
-    pathname.startsWith("/api/auth")
-  ) {
+    pathname.startsWith("/api/auth");
+
+  if (pathname === "/login" && token) {
+    return NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url));
+  }
+
+  if (isPublic) {
     return NextResponse.next();
   }
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
-  // Root route
   if (pathname === "/") {
     return NextResponse.redirect(
       new URL(token ? ROUTES.DASHBOARD : ROUTES.LOGIN, request.url)
     );
   }
 
-  // Protected routes
   if (!token) {
     return NextResponse.redirect(new URL(ROUTES.LOGIN, request.url));
   }
