@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum JobStatus {
+  OPEN
+  CLOSED
+}
+
+enum CandidateStatus {
+  APPLIED
+  FORM_SUBMITTED
+  INTERVIEW_SCHEDULED
+  OFFER_SENT
+  HIRED
+  REJECTED
+}
+
+enum InterviewType {
+  SCREENING
+  TECHNICAL
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+}
+
+enum FeedbackRecommendation {
+  HIRE
+  NO_HIRE
+  MAYBE
+}
+
+enum DocumentType {
+  RESUME
+  OFFER_LETTER
+  NDA
+}
+
+enum TimelineEventType {
+  APPLIED
+  FORM_SUBMITTED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  OFFER_GENERATED
+  OFFER_SENT
+  HIRED
+  REJECTED
+  STATUS_CHANGED
+}
+enum UserRole {
+  HR
+  ADMIN
+}
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(HR)
+  createdAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model JobOpening {
+  id          String     @id @default(cuid())
+  title       String
+  description String
+  skills      String
+  status      JobStatus  @default(OPEN)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  candidates  Candidate[]
+}
+
+model Candidate {
+  id                 String          @id @default(cuid())
+  name               String
+  email              String          @unique
+  phone              String?
+  location           String?
+  currentRole        String?
+  noticePeriod       String?
+  salaryExpectation  Decimal?
+  salaryCurrency     String?
+  linkedInUrl        String?
+  status             CandidateStatus @default(APPLIED)
+  rejectionReason    String?
+  notes              String?
+  jobOpeningId       String
+  jobOpening         JobOpening      @relation(fields: [jobOpeningId], references: [id])
+  magicLinks         MagicLink[]
+  interviews         Interview[]
+  timelineEvents     TimelineEvent[]
+  documents          Document[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  offerDetails       OfferDetails?
+  lastActivityAt DateTime       @default(now())
+  @@index([status])
+  @@index([jobOpeningId])
+  @@index([createdAt])
+  @@index([status, createdAt])
+  @@index([jobOpeningId, status])
+}
+
+model MagicLink {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  isUsed      Boolean @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([token])
+}
+
+model Interview {
+  id                     String                  @id @default(cuid())
+  candidateId            String
+  candidate              Candidate               @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  scheduledAt            DateTime              
+  type                   InterviewType
+  interviewerName        String
+  notes                  String?
+  status                 InterviewStatus         @default(SCHEDULED)
+  feedbackRecommendation FeedbackRecommendation?
+  feedbackNote           String?
+  completedAt            DateTime?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  @@index([scheduledAt])
+}
+
+model TimelineEvent {
+  id          String            @id @default(cuid())
+  candidateId String
+  candidate   Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  type        TimelineEventType
+  title       String
+  description String?
+  createdAt   DateTime          @default(now())
+  @@index([candidateId])
+}
+
+model Document {
+  id          String       @id @default(cuid())
+  candidateId String
+  candidate   Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  type        DocumentType
+  filename    String
+
+  path        String
+  fileSize    Int
+  mimeType    String       @default("application/pdf")
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model OfferDetails {
+  id               String   @id @default(cuid())
+  candidateId      String   @unique
+  candidate        Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  roleTitle        String
+  salaryCurrency   String
+  salaryAmount     Decimal
+  startDate        DateTime
+  reportingManager String
+  location         String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
