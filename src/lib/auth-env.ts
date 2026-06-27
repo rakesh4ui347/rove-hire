@@ -26,7 +26,7 @@ export function getAuthUrl() {
   return process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 }
 
-export function useSecureAuthCookies() {
+export function shouldUseSecureAuthCookies() {
   return (
     process.env.NODE_ENV === "production" ||
     getAuthUrl().startsWith("https://")

@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   LogOut,
   UserPlus,
-  Users,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";

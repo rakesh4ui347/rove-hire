@@ -76,6 +76,7 @@ export default async function CandidatePage({
       : "";
 
   const { magicLinks, ...profileCandidate } = candidate;
+  void magicLinks;
 
   return (
     <div className="space-y-8">

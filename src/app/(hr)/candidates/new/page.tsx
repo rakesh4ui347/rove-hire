@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { AddCandidateForm } from "@/components/add-candidate-form";
 import { PageBack } from "@/components/ui/page-back";

@@ -15,7 +15,6 @@ import {
   JobStatus,
   TimelineEventType,
 } from "@prisma/client";
-import { put } from "@vercel/blob";
 import { supabase } from "./supabase";
 
 

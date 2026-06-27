@@ -3,6 +3,8 @@ import { ReactNode } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { requireAuth } from "@/lib/session";
 
+export const dynamic = "force-dynamic";
+
 interface HRLayoutProps {
   children: ReactNode;
 }

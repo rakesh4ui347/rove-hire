@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { FormEvent, useState } from "react";
-import { Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";

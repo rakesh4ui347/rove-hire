@@ -9,8 +9,6 @@ import { PageHeader } from "@/components/ui/page-header";
 import { JobCard } from "@/components/job/job-card";
 import {
   Briefcase,
-  FolderOpen,
-  FolderLock,
   Plus,
   CircleCheckBig,
   Clock3,
