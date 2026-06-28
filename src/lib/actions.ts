@@ -6,7 +6,7 @@ import { requireAuth } from "@/lib/session";
 import { generateOfferLetterPdf, generateNDAPdf } from "@/lib/pdf";
 import { MAGIC_LINK_EXPIRY_DAYS } from "@/lib/constants";
 import { randomUUID } from "crypto";
-import { getAuthUrl } from "@/lib/auth-env";
+import { getPublicAppUrl } from "@/lib/auth-env";
 import {
   removeDocumentFiles,
   removeFiles,
@@ -159,7 +159,7 @@ export async function createCandidate(formData: FormData) {
     revalidatePath("/dashboard");
     revalidatePath("/jobs");
 
-    const baseUrl = getAuthUrl();
+    const baseUrl = await getPublicAppUrl();
     return {
       success: true,
       candidateId: candidate.id,
@@ -549,6 +549,6 @@ export async function regenerateMagicLink(candidateId: string) {
     data: { token, candidateId, expiresAt },
   });
 
-  const baseUrl = getAuthUrl();
+  const baseUrl = await getPublicAppUrl();
   return { success: true, magicLink: `${baseUrl}/apply/${token}` };
 }
