@@ -242,6 +242,10 @@ Do **not** use the Session pooler (port 5432) for `DATABASE_URL` on Vercel.
 
 
 
+**Quick fix:** Copy `DATABASE_URL` and `DIRECT_URL` from your local `.env` (they should use port **6543** on `pooler.supabase.com`) into Vercel → Settings → Environment Variables → **Production**, then **Redeploy**. Env changes do not apply until you redeploy.
+
+
+
 Seed the production database once:
 
 

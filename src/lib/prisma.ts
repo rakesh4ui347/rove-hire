@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { assertServerlessDatabaseUrl } from "./db-url";
+import { warnOnSessionPooler } from "./db-url";
 
-assertServerlessDatabaseUrl(process.env.DATABASE_URL);
+warnOnSessionPooler(process.env.DATABASE_URL);
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
