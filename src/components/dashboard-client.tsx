@@ -21,7 +21,7 @@ type CandidateRow = {
   id: string;
   name: string;
   status: CandidateStatus;
-  updatedAt: Date;
+  lastActivityAt: Date;
   jobOpening: {
     title: string;
   };

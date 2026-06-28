@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { notFound } from "next/navigation";
 import { CalendarDays, Users } from "lucide-react";
 
@@ -36,10 +37,10 @@ export default async function JobPage({ params }: JobPageProps) {
           name: true,
           email: true,
           status: true,
-          updatedAt: true,
+          lastActivityAt: true,
         },
         orderBy: {
-          updatedAt: "desc",
+          lastActivityAt: "desc",
         },
       },
     },
@@ -64,7 +65,7 @@ export default async function JobPage({ params }: JobPageProps) {
           <JobStatusActions jobId={job.id} status={job.status} />
         </div>
 
-        <p className="mt-1 text-sm text-muted">{job.description}</p>
+        <MarkdownContent content={job.description} className="mt-1 text-sm" />
 
         <div className="mt-4 flex flex-wrap gap-2">
           {job.skills.split(",").map((skill) => (
@@ -103,7 +104,11 @@ export default async function JobPage({ params }: JobPageProps) {
         {job.candidates.length === 0 ? (
           <EmptyState
             title="No candidates yet"
-            description="Add a candidate to start tracking applications for this role."
+            description={
+              job.status === "OPEN"
+                ? "Add a candidate to start tracking applications for this role."
+                : "This job is closed. Reopen it to add new candidates."
+            }
             action={
               job.status === "OPEN" ? (
                 <Link href="/candidates/new">

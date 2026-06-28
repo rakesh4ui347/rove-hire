@@ -12,7 +12,7 @@ type JobCandidate = {
   name: string;
   email: string;
   status: CandidateStatus;
-  updatedAt: Date;
+  lastActivityAt: Date;
 };
 
 interface JobCandidatesTableProps {
@@ -50,7 +50,7 @@ export function JobCandidatesTable({
                     <StatusBadge status={candidate.status} />
                   </span>
                   <span className="text-muted">
-                    {formatDate(candidate.updatedAt)}
+                    {formatDate(candidate.lastActivityAt)}
                   </span>
                 </Link>
               </td>

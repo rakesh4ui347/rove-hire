@@ -7,10 +7,10 @@ export default async function DashboardPage() {
       id: true,
       name: true,
       status: true,
-      updatedAt: true,
+      lastActivityAt: true,
       jobOpening: { select: { title: true } },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: { lastActivityAt: "desc" },
   });
 
   return <DashboardClient candidates={candidates} />;

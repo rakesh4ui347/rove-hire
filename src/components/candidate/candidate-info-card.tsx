@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { Download } from "lucide-react";
 
+import { CandidateStatus } from "@prisma/client";
+
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { InfoItem } from "@/components/ui/info-item";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { formatCurrency } from "@/lib/utils";
 type DocumentItem = {
   id: string;
@@ -10,6 +13,8 @@ type DocumentItem = {
 };
 
 type CandidateInfo = {
+  status: CandidateStatus;
+  rejectionReason: string | null;
   email: string;
   phone: string | null;
   location: string | null;
@@ -39,6 +44,10 @@ export function CandidateInfoCard({
   };
 
   const infoItems: InfoField[] = [
+    {
+      label: "Status",
+      value: <StatusBadge status={candidate.status} />,
+    },
     {
       label: "Email",
       value: candidate.email,
@@ -93,6 +102,17 @@ export function CandidateInfoCard({
             />
           ))}
         </dl>
+
+        {candidate.status === "REJECTED" && candidate.rejectionReason && (
+          <div className="rounded-lg border border-red-100 bg-red-50 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-red-700">
+              Rejection reason
+            </p>
+            <p className="mt-2 text-sm leading-6 text-red-900">
+              {candidate.rejectionReason}
+            </p>
+          </div>
+        )}
 
         {resume && (
           <div className="border-t border-border pt-5">

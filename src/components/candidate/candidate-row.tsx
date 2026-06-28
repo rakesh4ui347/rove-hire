@@ -11,7 +11,7 @@ type CandidateRowProps = {
     id: string;
     name: string;
     status: CandidateStatus;
-    updatedAt: Date;
+    lastActivityAt: Date;
     jobOpening: {
       title: string;
     };
@@ -36,7 +36,9 @@ export function CandidateRow({ candidate }: CandidateRowProps) {
             <StatusBadge status={candidate.status} />
           </span>
 
-          <span className="text-muted">{formatDate(candidate.updatedAt)}</span>
+          <span className="text-muted">
+            {formatDate(candidate.lastActivityAt)}
+          </span>
         </Link>
       </td>
     </tr>

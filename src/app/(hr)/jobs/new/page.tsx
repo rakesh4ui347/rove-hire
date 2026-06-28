@@ -97,8 +97,11 @@ export default function NewJobPage() {
                 placeholder="Describe the role, responsibilities, and team..."
                 required
                 disabled={loading}
-                className="min-h-[180px] resize-y"
+                className="min-h-[180px] resize-y font-mono text-sm"
               />
+              <p className="mt-1.5 text-xs text-muted">
+                Markdown supported: **bold**, *italic*, bullet lists, and ## headings.
+              </p>
             </div>
 
             <div>

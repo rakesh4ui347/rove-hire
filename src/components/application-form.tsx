@@ -61,6 +61,12 @@ const fields: FormInputField[] = [
   },
 ] as const;
 
+const TOKEN_ERROR_MESSAGES = {
+  invalid: "This application link is invalid.",
+  expired: "This link has expired. Please contact ROVE HR for a new application link.",
+  used: "This application has already been submitted.",
+} as const;
+
 export function ApplicationForm({
   token,
   candidateName,
@@ -84,10 +90,16 @@ export function ApplicationForm({
         new FormData(event.currentTarget)
       );
 
-      if (
-        result.error &&
-        !["invalid", "expired", "used"].includes(result.error)
-      ) {
+      if (result.error) {
+        if (result.error in TOKEN_ERROR_MESSAGES) {
+          toast.error(
+            TOKEN_ERROR_MESSAGES[
+              result.error as keyof typeof TOKEN_ERROR_MESSAGES
+            ]
+          );
+          return;
+        }
+
         toast.error(result.error);
         return;
       }

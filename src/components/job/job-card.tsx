@@ -1,4 +1,5 @@
 import { Card, CardBody } from "@/components/ui/card";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { formatDate } from "@/lib/utils";
 import { JobStatusBadge } from "./job-status-badge";
 import { Briefcase,  CalendarDays, Users } from "lucide-react";
@@ -42,9 +43,10 @@ export function JobCard({
 
           </div>
 
-          <p className="max-w-5xl leading-8 text-muted">
-            {job.description}
-          </p>
+          <MarkdownContent
+            content={job.description}
+            className="max-w-5xl line-clamp-3 text-sm"
+          />
 
           <div className="flex flex-wrap gap-2">
             {job.skills

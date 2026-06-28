@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
+import { FileUploadField } from "@/components/ui/file-upload-field";
 import { toast } from "sonner";
 
 type JobOption = {
@@ -41,8 +42,8 @@ export function AddCandidateForm({
       const formData = new FormData(event.currentTarget);
       const resume = formData.get("resume") as File | null;
 
-      if (resume && resume.size > 10 * 1024 * 1024) {
-        toast.error("Resume must be smaller than 10 MB.");
+      if (!resume || resume.size === 0) {
+        toast.error("Please upload a resume PDF.");
         return;
       }
 
@@ -156,40 +157,36 @@ export function AddCandidateForm({
             />
           </FormField>
 
-          <FormField
-  label="Job opening"
-  htmlFor="jobOpeningId"
->
-  <Select
-    id="jobOpeningId"
-    name="jobOpeningId"
-    defaultValue=""
-    required
-    disabled={loading || openJobs.length === 0}
-  >
-    <option value="" disabled>
-      Select a role
-    </option>
+          <FormField label="Job opening" htmlFor="jobOpeningId" required>
+            <Select
+              id="jobOpeningId"
+              name="jobOpeningId"
+              defaultValue=""
+              required
+              disabled={loading || openJobs.length === 0}
+            >
+              <option value="" disabled>
+                Select a role
+              </option>
 
-    {openJobs.map((job) => (
-      <option key={job.id} value={job.id}>
-        {job.title}
-      </option>
-    ))}
-  </Select>
+              {openJobs.map((job) => (
+                <option key={job.id} value={job.id}>
+                  {job.title}
+                </option>
+              ))}
+            </Select>
 
-  {openJobs.length === 0 && (
-    <p className="mt-2 text-sm text-muted">
-      There are currently no open job openings.
-    </p>
-  )}
-</FormField>
+            {openJobs.length === 0 && (
+              <p className="mt-2 text-sm text-muted">
+                There are currently no open job openings.
+              </p>
+            )}
+          </FormField>
 
-          <FormField label="Resume" htmlFor="resume">
-            <Input
+          <FormField label="Resume" htmlFor="resume" required>
+            <FileUploadField
               id="resume"
               name="resume"
-              type="file"
               accept="application/pdf"
               required
               disabled={loading}

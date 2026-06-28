@@ -9,6 +9,7 @@ import { randomUUID } from "crypto";
 import { getAuthUrl } from "@/lib/auth-env";
 import {
   removeDocumentFiles,
+  removeFiles,
   uploadFile,
 } from "@/lib/supabase-storage";
 import {
@@ -16,6 +17,7 @@ import {
   FeedbackRecommendation,
   InterviewType,
   JobStatus,
+  Prisma,
   TimelineEventType,
 } from "@prisma/client";
 
@@ -26,9 +28,17 @@ async function addTimelineEvent(
   title: string,
   description?: string
 ) {
-  await prisma.timelineEvent.create({
-    data: { candidateId, type, title, description },
-  });
+  const now = new Date();
+
+  await prisma.$transaction([
+    prisma.timelineEvent.create({
+      data: { candidateId, type, title, description },
+    }),
+    prisma.candidate.update({
+      where: { id: candidateId },
+      data: { lastActivityAt: now },
+    }),
+  ]);
 }
 
 export async function createJobOpening(formData: FormData) {
@@ -95,54 +105,80 @@ export async function createCandidate(formData: FormData) {
     return { error: "Resume must be under 10 MB." };
   }
 
+  const existingCandidate = await prisma.candidate.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  if (existingCandidate) {
+    return { error: "A candidate with this email already exists." };
+  }
+
   const buffer = Buffer.from(await resume.arrayBuffer());
   const filename = `${randomUUID()}-${resume.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-  const storagePath = await uploadFile("resumes", filename, buffer);
 
-  const candidate = await prisma.candidate.create({
-    data: {
-      name,
-      email,
-      jobOpeningId,
-      status: "APPLIED",
-    },
-  });
+  let storagePath: string | undefined;
 
-  await prisma.document.create({
-    data: {
+  try {
+    storagePath = await uploadFile("resumes", filename, buffer);
+
+    const candidate = await prisma.candidate.create({
+      data: {
+        name,
+        email,
+        jobOpeningId,
+        status: "APPLIED",
+      },
+    });
+
+    await prisma.document.create({
+      data: {
+        candidateId: candidate.id,
+        type: "RESUME",
+        filename: resume.name,
+        path: storagePath,
+        fileSize: buffer.length,
+        mimeType: "application/pdf",
+      },
+    });
+
+    const token = randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + MAGIC_LINK_EXPIRY_DAYS);
+
+    await prisma.magicLink.create({
+      data: { token, candidateId: candidate.id, expiresAt },
+    });
+
+    await addTimelineEvent(
+      candidate.id,
+      "APPLIED",
+      "Candidate added",
+      `Resume uploaded and application link generated for ${job.title}.`
+    );
+
+    revalidatePath("/dashboard");
+    revalidatePath("/jobs");
+
+    const baseUrl = getAuthUrl();
+    return {
+      success: true,
       candidateId: candidate.id,
-      type: "RESUME",
-      filename: resume.name,
-      path: storagePath,
-      fileSize: buffer.length,
-      mimeType: "application/pdf",
-    },
-  });
+      magicLink: `${baseUrl}/apply/${token}`,
+    };
+  } catch (error) {
+    if (storagePath) {
+      await removeFiles("resumes", [storagePath]).catch(() => {});
+    }
 
-  const token = randomUUID();
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + MAGIC_LINK_EXPIRY_DAYS);
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return { error: "A candidate with this email already exists." };
+    }
 
-  await prisma.magicLink.create({
-    data: { token, candidateId: candidate.id, expiresAt },
-  });
-
-  await addTimelineEvent(
-    candidate.id,
-    "APPLIED",
-    "Candidate added",
-    `Resume uploaded and application link generated for ${job.title}.`
-  );
-
-  revalidatePath("/dashboard");
-  revalidatePath("/jobs");
-
-  const baseUrl = getAuthUrl();
-  return {
-    success: true,
-    candidateId: candidate.id,
-    magicLink: `${baseUrl}/apply/${token}`,
-  };
+    throw error;
+  }
 }
 
 export async function submitApplication(token: string, formData: FormData) {
@@ -184,6 +220,7 @@ export async function submitApplication(token: string, formData: FormData) {
         salaryCurrency: "USD",
         linkedInUrl: linkedInUrl || null,
         status: "FORM_SUBMITTED",
+        lastActivityAt: new Date(),
       },
     }),
     prisma.magicLink.update({
@@ -425,7 +462,7 @@ export async function generateOfferDocuments(candidateId: string, formData: Form
     }),
     prisma.candidate.update({
       where: { id: candidateId },
-      data: { status: "OFFER_SENT" },
+      data: { status: "OFFER_SENT", lastActivityAt: new Date() },
     }),
     prisma.timelineEvent.create({
       data: {
